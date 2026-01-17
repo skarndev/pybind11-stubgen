@@ -265,20 +265,42 @@ class FixMissing__all__Attribute(IParser):
 
 class FixBuiltinTypes(IParser):
     _any_type = QualifiedName.from_str("typing.Any")
+    _hidden_builtins = {
+        getattr(types, name).__qualname__: name for name in dir(types) if isinstance(
+        getattr(types, name), type) 
+        and getattr(getattr(types, name), '__module__', None) == 'builtins' 
+        and not hasattr(builtins, name)
+    }
+    _hidden_builtins_overrides = {
+        "function": "typing.Callable",
+        "builtin_function_or_method": "typing.Callable",
+    }
 
     def handle_type(self, type_: type) -> QualifiedName:
         if type_.__qualname__ == "PyCapsule" and type_.__module__ == "builtins":
             return self._any_type
-
+        
         result = super().handle_type(type_)
 
         if result[0] == "builtins":
-            if result[1] == "NoneType":
-                return QualifiedName((Identifier("None"),))
-            if result[1] in ("function", "builtin_function_or_method"):
-                callable_t = self.parse_annotation_str("typing.Callable")
-                assert isinstance(callable_t, ResolvedType)
-                return callable_t.name
+            
+            typename = result[1]
+
+            if typename == "NoneType":
+                return QualifiedName((Identifier("None"),)) 
+
+            hidden_builtin = self._hidden_builtins.get(typename)
+            if hidden_builtin is not None:
+                hidden_builtin_override = self._hidden_builtins_overrides.get(
+                    typename
+                )
+
+                annotation = hidden_builtin_override or 'types.%s' % hidden_builtin
+
+                override_t = self.parse_annotation_str(annotation)
+                assert isinstance(override_t, ResolvedType)
+                return override_t.name 
+
             return QualifiedName(result[1:])
 
         return result
