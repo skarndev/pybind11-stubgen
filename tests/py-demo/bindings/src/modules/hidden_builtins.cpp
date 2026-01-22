@@ -2,7 +2,7 @@
 
 #include <pybind11/pytypes.h>
 
-void bind_hidden_builtins_module(py::module &&m) {
+void bind_hidden_builtins_module(py::module&& m) {
   py::dict readonly_dict{};
 
   auto mappingproxy_t = py::module::import("types").attr("MappingProxyType");
