@@ -312,7 +312,7 @@ class FixBuiltinTypes(IParser):
                 assert isinstance(override_t, ResolvedType)
                 return override_t.name
 
-            return QualifiedName(result[1:]) 
+            return QualifiedName(result[1:])
 
         return result
 
