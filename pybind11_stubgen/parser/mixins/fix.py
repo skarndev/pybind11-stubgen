@@ -40,7 +40,6 @@ logger = getLogger("pybind11_stubgen")
 
 
 class RemoveSelfAnnotation(IParser):
-
     __any_t_name = QualifiedName.from_str("Any")
     __typing_any_t_name = QualifiedName.from_str("typing.Any")
 
@@ -274,7 +273,8 @@ class FixBuiltinTypes(IParser):
         == "builtins"  # defined in types, but reports `builtins`
         and not hasattr(builtins, name)  # not actually available in `builtins`
     }
-    """Types by their real name that are available in the `types` module, but report `builtins` at runtime."""
+    """Types by their real name that are available in the `types` module,
+    but report `builtins` at runtime."""
 
     _hidden_builtins_overrides = {
         "function": "typing.Callable",
@@ -289,7 +289,6 @@ class FixBuiltinTypes(IParser):
         result = super().handle_type(type_)
 
         if result[0] == "builtins":
-
             typename = result[1]
 
             if typename == "NoneType":
@@ -297,13 +296,15 @@ class FixBuiltinTypes(IParser):
                     (Identifier("None"),)
                 )  # just print None instead of types.NoneType
 
-            # some types (e.g. `types.MappingProxyType`) report a wrong qualname at runtime, and module == `builtins`
-            # we collect these upfront and translate their "builtin" name to the importable one
+            # some types (e.g. `types.MappingProxyType`) report a wrong qualname
+            #  at runtime, and module == `builtins`
+            # we collect these upfront and translate their "builtin" name to the
+            #  importable one
             hidden_builtin = self._hidden_builtins.get(typename)
             if hidden_builtin is not None:
-
-                # some of these types are better described via the `typing` special forms
-                # e.g. types.FunctionType -> typing.Callable, so we use the override name
+                # some of these types are better described via the `typing`
+                # special forms e.g. types.FunctionType -> typing.Callable,
+                # so we use the override name
                 hidden_builtin_override = self._hidden_builtins_overrides.get(typename)
 
                 annotation = hidden_builtin_override or "types.%s" % hidden_builtin
